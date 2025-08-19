@@ -13,7 +13,7 @@ def start_work(say) -> None:
 			"type": "header",
 			"text": {
 				"type": "plain_text",
-				"text": "開始時間を選択",
+				"text": "開始日時を選択",
 				"emoji": True
 			}
 		},
@@ -98,3 +98,10 @@ def save_start_time(ack, body, say):
 		add_row(data)
 	else:
 		say(text="開始日時の選択を取得できませんでした。もう一度お試しください。")
+  
+@bolt_app.action("cancel_start_time")
+def cancel_start_time(ack, say):
+	ack()
+	say(text="開始日時の選択がキャンセルされました。メニューに戻ります。")
+	from display.menu import display_menu  # 遅延インポート
+	display_menu(say)  # メニューに戻る
