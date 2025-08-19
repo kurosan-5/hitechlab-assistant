@@ -1,5 +1,6 @@
 from datetime import datetime
 from boltApp import bolt_app
+from google.sheets import add_row
 
 def start_work(say) -> None:
 	# 現在のローカル時刻から日付と時間の文字列を生成
@@ -92,5 +93,8 @@ def save_start_time(ack, body, say):
 
 	if selected_date and selected_time:
 		say(text=f"開始日時が設定されました: {selected_date} {selected_time}")
+		# add_row([[str(selected_date), str(selected_time)]])
+		data = [["aaa3","feji"], ["bbb"]]
+		add_row(data)
 	else:
 		say(text="開始日時の選択を取得できませんでした。もう一度お試しください。")
