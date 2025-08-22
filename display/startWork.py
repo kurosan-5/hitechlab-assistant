@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from boltApp import bolt_app
-from google.sheets import add_row
+from db.repository import start_work as repo_start_work, get_or_create_user_by_name
 
 def start_work(say) -> None:
 	# 現在のローカル時刻から日付と時間の文字列を生成
@@ -73,7 +73,7 @@ def start_work(say) -> None:
 
 
 @bolt_app.action("save_start_time")
-def save_start_time(ack, body, say):
+def save_start_time(ack, body, say, client):
 	ack()
 	# ユーザーが選択した開始日時を取得（block_id が動的なため values を走査）
 	selected_date = None
@@ -92,13 +92,29 @@ def save_start_time(ack, body, say):
 		pass
 
 	if selected_date and selected_time:
-		say(text=f"開始日時が設定されました: {selected_date} {selected_time}")
-		# add_row([[str(selected_date), str(selected_time)]])
-		data = [["aaa3","feji"], ["bbb"]]
-		add_row(data)
+		# Slackプロフィール名でユーザー同定（簡易）
+		real_name = None
+		try:
+			user_slack_id = body.get("user", {}).get("id")
+			if user_slack_id:
+				prof = client.users_profile_get(user=user_slack_id)
+				real_name = prof.get("profile", {}).get("real_name") or prof.get("profile", {}).get("display_name")
+		except Exception:
+			pass
+
+		user = get_or_create_user_by_name(real_name or "unknown")
+
+		# 入力はJSTとして解釈し、UTCへ変換
+		hh, mm = map(int, selected_time.split(":"))
+		y, m, d = map(int, selected_date.split("-"))
+		jst = timezone(timedelta(hours=9))
+		start_ts = datetime(y, m, d, hh, mm, tzinfo=jst).astimezone(timezone.utc)
+
+		repo_start_work(user.id, start_ts)
+		say(text=f"開始を登録しました: {selected_date} {selected_time}")
 	else:
 		say(text="開始日時の選択を取得できませんでした。もう一度お試しください。")
-  
+
 @bolt_app.action("cancel_start_time")
 def cancel_start_time(ack, say):
 	ack()

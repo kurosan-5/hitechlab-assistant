@@ -3,6 +3,9 @@ import os
 import sys
 from display.menu import display_menu
 from display.startWork import start_work
+from handlers.workflows import prompt_end_work
+from handlers.attendance import prompt_attendance, show_attendance_overview
+from handlers.user_profile import show_or_edit_user
 from boltApp import bolt_app
 from slack_bolt import App
 from slack_bolt.adapter.flask import SlackRequestHandler
@@ -27,7 +30,7 @@ def main() -> int:
 	logger = logging.getLogger("hitech-memoBot")
 
 	@bolt_app.event("message")
-	def handle_dm_message(body, say, logger):  # type: ignore[no-redef]
+	def handle_dm_message(body, say, logger, client):  # type: ignore[no-redef]
 		event = body.get("event", {})
 		# bot自身やスレッド更新等は無視
 		if event.get("subtype"):
@@ -37,8 +40,25 @@ def main() -> int:
 			return
 
 		text = event.get("text", "").strip()
-		if text == "menu" or text == "メニュー" or text=="めにゅー":
+		if text in {"menu", "メニュー", "めにゅー"}:
 			display_menu(say)
+		elif text in {"出勤開始", "しゅっきん", "start"}:
+			start_work(say)
+		elif text in {"退勤", "たいきん", "end"}:
+			prompt_end_work(say)
+		elif text in {"出勤更新", "予定", "att"}:
+			prompt_attendance(say)
+		elif text in {"出勤確認", "かくにん", "check"}:
+			show_attendance_overview(say)
+		elif text in {"ユーザー情報", "プロフィール", "user"}:
+			# fetch display name
+			try:
+				user_slack_id = event.get("user")
+				prof = client.users_profile_get(user=user_slack_id)
+				real_name = prof.get("profile", {}).get("real_name") or prof.get("profile", {}).get("display_name")
+			except Exception:
+				real_name = None
+			show_or_edit_user(say, real_name)
 
 	flask_app = Flask(__name__)
 	handler = SlackRequestHandler(bolt_app)

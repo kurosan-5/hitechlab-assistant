@@ -1,3 +1,6 @@
+"""
+Deprecated: 仕様変更によりSupabaseへ移行。必要があれば手動で参照。
+"""
 import os
 import json
 import gspread
