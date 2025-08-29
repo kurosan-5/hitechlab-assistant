@@ -1,6 +1,6 @@
 from datetime import datetime, timezone, timedelta
 from boltApp import bolt_app
-from db.repository import start_work as repo_start_work, get_or_create_user_by_name
+from db.repository import start_work as repo_start_work, get_or_create_user
 
 def start_work(say) -> None:
 	# 現在のローカル時刻から日付と時間の文字列を生成
@@ -92,17 +92,24 @@ def save_start_time(ack, body, say, client):
 		pass
 
 	if selected_date and selected_time:
-		# Slackプロフィール名でユーザー同定（簡易）
-		real_name = None
+		# SlackユーザーIDでユーザー同定（必須）
+		display_name = None
+		user_slack_id = None
 		try:
-			user_slack_id = body.get("user", {}).get("id")
-			if user_slack_id:
+			user_slack_id = body.get("user", {}).get("id") or body.get("event", {}).get("user")
+			if not user_slack_id and isinstance(body.get("authorizations"), list) and body["authorizations"]:
+				user_slack_id = body["authorizations"][0].get("user_id")
+			if user_slack_id and client:
 				prof = client.users_profile_get(user=user_slack_id)
-				real_name = prof.get("profile", {}).get("real_name") or prof.get("profile", {}).get("display_name")
+				display_name = prof.get("profile", {}).get("real_name") or prof.get("profile", {}).get("display_name")
 		except Exception:
 			pass
 
-		user = get_or_create_user_by_name(real_name or "unknown")
+		if not user_slack_id:
+			say(text="ユーザーを特定できませんでした。もう一度お試しください。")
+			return
+
+		user = get_or_create_user(user_slack_id, display_name)
 
 		# 入力はJSTとして解釈し、UTCへ変換
 		hh, mm = map(int, selected_time.split(":"))
@@ -112,12 +119,14 @@ def save_start_time(ack, body, say, client):
 
 		repo_start_work(user.id, start_ts)
 		say(text=f"開始を登録しました: {selected_date} {selected_time}")
+		from display.menu import display_menu  # 遅延インポート
+		display_menu(say, body=body, client=client)
 	else:
 		say(text="開始日時の選択を取得できませんでした。もう一度お試しください。")
 
 @bolt_app.action("cancel_start_time")
-def cancel_start_time(ack, say):
+def cancel_start_time(ack, body, say, client=None):
 	ack()
 	say(text="開始日時の選択がキャンセルされました。メニューに戻ります。")
 	from display.menu import display_menu  # 遅延インポート
-	display_menu(say)  # メニューに戻る
+	display_menu(say, body=body, client=client)  # メニューに戻る

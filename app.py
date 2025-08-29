@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 from display.menu import display_menu
-from display.startWork import start_work
+from handlers.startWork import start_work
 from handlers.workflows import prompt_end_work
 from handlers.attendance import prompt_attendance, show_attendance_overview
 from handlers.user_profile import show_or_edit_user
@@ -13,9 +13,18 @@ from flask import Flask, request
 
 def _setup_logging() -> None:
 	logging.basicConfig(
-		level=os.getenv("LOG_LEVEL", "INFO").upper(),
+		level=os.getenv("LOG_LEVEL", "WARNING").upper(),
 		format="%(asctime)s %(levelname)s %(name)s - %(message)s",
 	)
+
+	# Slackライブラリやその他の外部ライブラリのログを抑制
+	logging.getLogger("slack_bolt").setLevel(logging.ERROR)
+	logging.getLogger("slack_sdk").setLevel(logging.ERROR)
+	logging.getLogger("urllib3").setLevel(logging.ERROR)
+	logging.getLogger("requests").setLevel(logging.ERROR)
+	logging.getLogger("httpx").setLevel(logging.ERROR)
+	logging.getLogger("werkzeug").setLevel(logging.ERROR)
+	logging.getLogger("flask").setLevel(logging.ERROR)
 
 
 def _get_env(key: str) -> str | None:
@@ -41,24 +50,36 @@ def main() -> int:
 
 		text = event.get("text", "").strip()
 		if text in {"menu", "メニュー", "めにゅー"}:
-			display_menu(say)
+			display_menu(say, body=body, client=client)
 		elif text in {"出勤開始", "しゅっきん", "start"}:
 			start_work(say)
 		elif text in {"退勤", "たいきん", "end"}:
-			prompt_end_work(say)
+			# ユーザー情報を取得
+			user_slack_id = event.get("user")
+			display_name = None
+			if user_slack_id:
+				try:
+					prof = client.users_profile_get(user=user_slack_id)
+					display_name = prof.get("profile", {}).get("real_name") or prof.get("profile", {}).get("display_name")
+				except Exception:
+					pass
+
+			from db.repository import get_or_create_user
+			user = get_or_create_user(user_slack_id or "unknown", display_name)
+			prompt_end_work(say, user_id=user.id)
 		elif text in {"出勤更新", "予定", "att"}:
 			prompt_attendance(say)
 		elif text in {"出勤確認", "かくにん", "check"}:
 			show_attendance_overview(say)
 		elif text in {"ユーザー情報", "プロフィール", "user"}:
-			# fetch display name
+			# fetch display name and pass slack id
 			try:
 				user_slack_id = event.get("user")
 				prof = client.users_profile_get(user=user_slack_id)
 				real_name = prof.get("profile", {}).get("real_name") or prof.get("profile", {}).get("display_name")
 			except Exception:
 				real_name = None
-			show_or_edit_user(say, real_name)
+			show_or_edit_user(say, real_name, user_slack_id)
 
 	flask_app = Flask(__name__)
 	handler = SlackRequestHandler(bolt_app)
