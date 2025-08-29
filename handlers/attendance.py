@@ -227,3 +227,10 @@ def show_attendance_overview(say, client=None) -> None:
         # ログにエラーを出力（デバッグ用）
         import logging
         logging.error(f"Error in show_attendance_overview: {e}", exc_info=True)
+
+
+# 不足しているアクションハンドラーを追加
+@bolt_app.action("attendance_datepicker")
+def handle_attendance_datepicker(ack):
+    """出勤予定日付ピッカーのハンドラー（何もしない）"""
+    ack()

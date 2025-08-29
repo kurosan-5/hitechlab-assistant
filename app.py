@@ -6,6 +6,10 @@ from handlers.startWork import start_work
 from handlers.workflows import prompt_end_work
 from handlers.attendance import prompt_attendance, show_attendance_overview
 from handlers.user_profile import show_or_edit_user
+# チャンネルメモ機能をインポート（イベントハンドラーが自動登録される）
+import handlers.channel_memo
+# チャンネル機能をインポート
+from handlers.channel.handlers import register_channel_handlers
 from boltApp import bolt_app
 from slack_bolt import App
 from slack_bolt.adapter.flask import SlackRequestHandler
@@ -39,16 +43,28 @@ def main() -> int:
 	logger = logging.getLogger("hitech-memoBot")
 
 	@bolt_app.event("message")
-	def handle_dm_message(body, say, logger, client):  # type: ignore[no-redef]
+	def handle_unified_message(body, say, logger, client):  # type: ignore[no-redef]
+		"""統一メッセージハンドラー - DM/チャンネルを判定して適切な処理に振り分け"""
 		event = body.get("event", {})
+
 		# bot自身やスレッド更新等は無視
-		if event.get("subtype"):
-			return
-		# DM以外は無視
-		if event.get("channel_type") != "im":
+		if event.get("subtype") or event.get("bot_id"):
 			return
 
+		channel_type = event.get("channel_type")
 		text = event.get("text", "").strip()
+
+		if channel_type == "im":
+			# DM処理
+			handle_dm_logic(event, body, say, client, logger)
+		else:
+			# チャンネル処理
+			handle_channel_logic(event, body, say, client, logger)
+
+	def handle_dm_logic(event, body, say, client, logger):
+		"""DM専用処理ロジック"""
+		text = event.get("text", "").strip()
+
 		if text in {"menu", "メニュー", "めにゅー"}:
 			display_menu(say, body=body, client=client)
 		elif text in {"出勤開始", "しゅっきん", "start"}:
@@ -80,6 +96,47 @@ def main() -> int:
 			except Exception:
 				real_name = None
 			show_or_edit_user(say, real_name, user_slack_id)
+		elif text in {"help", "ヘルプ", "使い方"}:
+			help_blocks = [
+				{
+					"type": "header",
+					"text": {
+						"type": "plain_text",
+						"text": "🤖 DM機能ヘルプ（勤怠管理）",
+						"emoji": True
+					}
+				},
+				{
+					"type": "section",
+					"text": {
+						"type": "mrkdwn",
+						"text": "*📋 勤怠管理機能:*\n• `メニュー` - メインメニューを表示\n• `出勤開始` / `しゅっきん` / `start` - 勤務開始時刻を記録\n• `退勤` / `たいきん` / `end` - 勤務終了時刻を記録\n• `出勤更新` / `予定` / `att` - 出勤予定を登録\n• `出勤確認` / `かくにん` / `check` - チーム出勤状況を確認\n• `ユーザー情報` / `プロフィール` / `user` - 個人設定と勤務記録"
+					}
+				},
+				{
+					"type": "section",
+					"text": {
+						"type": "mrkdwn",
+						"text": "*� DM専用コマンド:*\n• 出勤開始、退勤の記録\n• 火曜日・金曜日の出勤予定管理\n• 個人の勤務時間確認\n• チーム全体の出勤状況確認"
+					}
+				}
+			]
+			say(blocks=help_blocks)
+
+	def handle_channel_logic(event, body, say, client, logger):
+		"""チャンネル専用処理ロジック"""
+		text = event.get("text", "").strip()
+
+		# チャンネル機能を直接処理
+		from handlers.channel.handlers import handle_channel_message
+		handle_channel_message(event, body, say, client, logger)
+
+		# チャンネルメモ機能も処理
+		from handlers.channel_memo import handle_channel_memo_logic
+		handle_channel_memo_logic(event, body, say, client)
+
+	# チャンネル機能のアクションハンドラーのみ登録（メッセージハンドラーは統一ハンドラーを使用）
+	register_channel_handlers(bolt_app)
 
 	flask_app = Flask(__name__)
 	handler = SlackRequestHandler(bolt_app)

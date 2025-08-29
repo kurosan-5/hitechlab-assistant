@@ -130,3 +130,16 @@ def cancel_start_time(ack, body, say, client=None):
 	say(text="開始日時の選択がキャンセルされました。メニューに戻ります。")
 	from display.menu import display_menu  # 遅延インポート
 	display_menu(say, body=body, client=client)  # メニューに戻る
+
+
+# 不足しているアクションハンドラーを追加
+@bolt_app.action("datapicker")
+def handle_start_datepicker(ack):
+	"""開始日付ピッカーのハンドラー（何もしない）"""
+	ack()
+
+
+@bolt_app.action("timepicker")
+def handle_start_timepicker(ack):
+	"""開始時刻ピッカーのハンドラー（何もしない）"""
+	ack()

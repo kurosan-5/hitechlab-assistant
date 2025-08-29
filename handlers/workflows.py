@@ -83,18 +83,13 @@ def prompt_end_work(say, values=None, error_message=None, user_id=None) -> None:
         },
         {
             "type": "section",
-            "text": {"type": "mrkdwn", "text": "*休憩時間を選択*"}
-        },
-        {
-            "type": "actions",
-            "elements": [
-                {
-                    "type": "timepicker",
-                    "initial_time": initial_break_time,
-                    "action_id": "break_time_picker",
-                    "placeholder": {"type": "plain_text", "text": "休憩時間", "emoji": True},
-                },
-            ],
+            "text": {"type": "mrkdwn", "text": "*休憩時間を選択（HH:MM形式）*"},
+            "accessory": {
+                "type": "timepicker",
+                "initial_time": initial_break_time,
+                "action_id": "break_time_picker",
+                "placeholder": {"type": "plain_text", "text": "休憩時間", "emoji": True},
+            }
         },
         {
             "type": "input",
@@ -224,3 +219,28 @@ def cancel_end_time(ack, body, say, client=None):  # type: ignore[no-redef]
     say("退勤入力をキャンセルしました。メニューに戻ります。")
     from display.menu import display_menu
     display_menu(say, body=body, client=client)
+
+
+# 不足しているアクションハンドラーを追加
+@bolt_app.action("end_datepicker")
+def handle_end_datepicker(ack):
+    """終了日付ピッカーのハンドラー（何もしない）"""
+    ack()
+
+
+@bolt_app.action("end_timepicker")
+def handle_end_timepicker(ack):
+    """終了時刻ピッカーのハンドラー（何もしない）"""
+    ack()
+
+
+@bolt_app.action("break_time_picker")
+def handle_break_time_picker(ack):
+    """休憩時間ピッカーのハンドラー（何もしない）"""
+    ack()
+
+
+@bolt_app.action("end_comment_input")
+def handle_end_comment_input(ack):
+    """コメント入力のハンドラー（何もしない）"""
+    ack()

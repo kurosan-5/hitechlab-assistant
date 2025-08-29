@@ -487,3 +487,10 @@ def back_to_menu(ack, body, say):
     ack()
     from display.menu import display_menu
     display_menu(say, body=body)
+
+
+# 不足しているアクションハンドラーを追加
+@bolt_app.action("input")
+def handle_generic_input(ack):
+    """汎用的なinputハンドラー（何もしない）"""
+    ack()
