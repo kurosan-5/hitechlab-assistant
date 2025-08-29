@@ -102,3 +102,37 @@ def handle_user_info(ack, body, say, client, logger):  # type: ignore[no-redef]
 	except Exception:
 		real_name = None
 	show_or_edit_user(say, real_name, slack_user_id)
+
+
+@bolt_app.action("show_DM_help")
+def handle_show_DM_help(ack, say):  # type: ignore[no-redef]
+	ack()
+	help_blocks = [
+		{
+			"type": "header",
+			"text": {
+				"type": "plain_text",
+				"text": "🤖 HiTech MemoBot 使い方",
+				"emoji": True
+			}
+		},
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "*📋 DM機能（勤怠管理）:*\n• `メニュー` - メインメニューを表示\n• `出勤開始` - 勤務開始時刻を記録\n• `退勤` - 勤務終了時刻を記録\n• `出勤更新` - 出勤予定を登録\n• `出勤確認` - チーム出勤状況を確認\n• `ユーザー情報` - 個人設定と勤務記録"
+			}
+		},
+		{
+			"type": "actions",
+			"elements": [
+				{"type": "button", "text": {"type": "plain_text", "text": "メニューに戻る"}, "action_id": "back_to_menu"}
+			]
+		}
+	]
+	say(blocks=help_blocks, text="HiTech MemoBot 使い方")
+
+@bolt_app.action("back_to_menu")
+def handle_back_to_menu(ack, body, say, client):  # type: ignore[no-redef]
+	ack()
+	display_menu(say, body, client)
