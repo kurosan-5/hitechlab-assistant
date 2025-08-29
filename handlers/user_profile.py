@@ -65,7 +65,6 @@ def show_or_edit_user(say, real_name: str | None, slack_user_id: str | None = No
     ]
     say(blocks=blocks, text="ユーザー情報メニュー")
 
-
 def show_user_info(say, real_name: str | None, slack_user_id: str | None = None) -> None:
     """ユーザー情報の詳細を表示"""
     user = get_or_create_user(slack_user_id or "unknown", real_name)
