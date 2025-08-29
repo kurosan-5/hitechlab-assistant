@@ -92,6 +92,7 @@ def main() -> int:
 	def health():
 		return "ok", 20
 
+
 	port = int(os.getenv("PORT", "3001"))
 	logger.info("Starting Slack bot HTTP server on port %s …", port)
 	flask_app.run(host="0.0.0.0", port=port)
