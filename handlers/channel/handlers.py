@@ -46,22 +46,41 @@ from .tasks import (
 
 def handle_channel_message(event, body, say, client, logger):
     """チャンネルメッセージの統一処理"""
+    logger.info("DEBUG: [handle_channel_message] チャンネルメッセージ処理開始")
+    
     text = event.get("text", "").strip()
+    channel_id = event.get("channel")
+    user_id = event.get("user")
+    
+    logger.info(f"DEBUG: [handle_channel_message] 処理対象:")
+    logger.info(f"  - text: '{text}'")
+    logger.info(f"  - channel_id: {channel_id}")
+    logger.info(f"  - user_id: {user_id}")
 
     # メニュー表示
     if re.match(r"^(メニュー|めにゅー|menu)$", text, re.IGNORECASE):
+        logger.info("DEBUG: [handle_channel_message] メニューパターンにマッチ、メニュー表示開始")
         try:
             blocks = create_channel_menu_blocks()
-            say(
+            logger.info("DEBUG: [handle_channel_message] メニューブロック作成完了")
+            
+            result = say(
                 text="📱 チャンネルメニュー",
                 blocks=blocks
             )
+            logger.info(f"DEBUG: [handle_channel_message] メニュー表示結果: {result}")
+            logger.info("DEBUG: [handle_channel_message] メニュー表示成功")
         except Exception as e:
-            logger.error(f"Error showing channel menu: {e}")
+            logger.error(f"DEBUG: [handle_channel_message] メニュー表示エラー: {e}")
+            logger.error(f"DEBUG: [handle_channel_message] メニュー表示エラー詳細:", exc_info=True)
             say(text="❌ メニューの表示中にエラーが発生しました")
+        return
+    else:
+        logger.info(f"DEBUG: [handle_channel_message] メニューパターンにマッチしない: '{text}'")
 
     # タスク作成（!task コマンド）
-    elif re.match(r"^!task\s+(.+)", text, re.IGNORECASE):
+    if re.match(r"^!task\s+(.+)", text, re.IGNORECASE):
+        logger.info("DEBUG: [handle_channel_message] タスク作成パターンにマッチ")
         try:
             # タスク名を抽出
             task_match = re.match(r"^!task\s+(.+)", text, re.IGNORECASE)
@@ -90,7 +109,8 @@ def handle_channel_message(event, body, say, client, logger):
             say(text="❌ タスクの作成中にエラーが発生しました")
 
     # メモ一覧表示（!memo コマンド）
-    elif re.match(r"^!memo\s*$", text, re.IGNORECASE):
+    if re.match(r"^!memo\s*$", text, re.IGNORECASE):
+        logger.info("DEBUG: [handle_channel_message] メモ一覧表示パターンにマッチ")
         try:
             channel_id = event.get("channel")
             memos = get_all_channel_memos(channel_id, limit=50)

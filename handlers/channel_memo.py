@@ -279,19 +279,31 @@ def handle_memo_stats(event: dict, say, client) -> None:
 
 def handle_channel_memo_logic(event, body, say, client):
     """チャンネルメモロジック（統一ハンドラーから呼び出される）"""
+    logger.info("DEBUG: [handle_channel_memo_logic] チャンネルメモロジック開始")
+    
     # ボットのメッセージは無視
     if event.get("subtype") or event.get("bot_id"):
+        logger.info(f"DEBUG: [handle_channel_memo_logic] bot_idまたはsubtypeのため無視")
         return
 
     text = event.get("text", "").strip()
+    channel_id = event.get("channel")
+    user_id = event.get("user")
+    
+    logger.info(f"DEBUG: [handle_channel_memo_logic] 処理対象:")
+    logger.info(f"  - text: '{text}'")
+    logger.info(f"  - channel_id: {channel_id}")
+    logger.info(f"  - user_id: {user_id}")
 
     # メニューコマンドは統一ハンドラーで処理されるため、ここでは処理しない
     menu_patterns = ["メニュー", "めにゅー", "menu"]
     if text.lower() in [pattern.lower() for pattern in menu_patterns]:
+        logger.info("DEBUG: [handle_channel_memo_logic] メニューパターンのため処理をスキップ")
         return
 
     # !taskコマンドは統一ハンドラーで処理されるため、ここでは処理しない
     if text.lower().startswith("!task"):
+        logger.info("DEBUG: [handle_channel_memo_logic] !taskパターンのため処理をスキップ")
         return
 
     # !searchとか!recentコマンドの処理
