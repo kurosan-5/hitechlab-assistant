@@ -26,7 +26,8 @@ from db.repository import (
 
 from .menu import (
     create_channel_menu_blocks,
-    create_channel_help_blocks
+    create_channel_help_blocks,
+    create_memo_management_blocks
 )
 
 from .memo import (
@@ -185,6 +186,20 @@ def register_channel_handlers(app: App):
         except Exception as e:
             print(f"Error showing menu: {e}")
             say(text="❌ メニューの表示中にエラーが発生しました")
+
+    @app.action("show_memo_management")
+    def handle_show_memo_management(ack, body, say, client: WebClient):
+        """メモ管理を表示"""
+        ack()
+        try:
+            blocks = create_memo_management_blocks()
+            say(
+                text="📝 メモ管理",
+                blocks=blocks
+            )
+        except Exception as e:
+            print(f"Error showing memo management: {e}")
+            say(text="❌ メモ管理の表示中にエラーが発生しました")
 
     # ヘルプ表示
     @app.action("show_channel_help")

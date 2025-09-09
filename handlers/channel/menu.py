@@ -36,53 +36,22 @@ def create_channel_menu_blocks() -> list[Dict[str, Any]]:
             }
         },
         {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": "*利用可能な機能*\n\n🔍 メモ検索・統計\n📋 タスク管理\n💬 会話の自動記録"
-            }
-        },
-        {
-            "type": "actions",
-            "elements": [
+            "type" : "actions",
+            "elements" : [
                 {
-                    "type": "button",
-                    "text": {
-                        "type": "plain_text",
-                        "text": "� メモ作成"
+                    "type":"button",
+                    "text":{
+                        "type":"plain_text",
+                        "text":"📝 メモ管理"
                     },
-                    "style": "primary",
-                    "action_id": "show_memo_create"
-                },
-                {
-                    "type": "button",
-                    "text": {
-                        "type": "plain_text",
-                        "text": "🔍 メモ検索"
-                    },
-                    "action_id": "show_memo_search"
-                },
-                {
-                    "type": "button",
-                    "text": {
-                        "type": "plain_text",
-                        "text": "� メモ一覧"
-                    },
-                    "action_id": "show_memo_list"
+                    "style":"primary",
+                    "action_id":"show_memo_management"
                 }
             ]
         },
         {
             "type": "actions",
             "elements": [
-                {
-                    "type": "button",
-                    "text": {
-                        "type": "plain_text",
-                        "text": "� メモ統計"
-                    },
-                    "action_id": "show_memo_stats"
-                },
                 {
                     "type": "button",
                     "text": {
@@ -104,6 +73,64 @@ def create_channel_menu_blocks() -> list[Dict[str, Any]]:
         }
     ]
 
+def create_memo_management_blocks() -> list[Dict[str, Any]]:
+    """メモ管理メニュー用のブロックを作成"""
+    blocks = [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "📝 メモ管理"
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*利用可能な機能*\n\n• メモの作成・検索・一覧表示\n• メモの統計情報確認"
+            }
+        },
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "📝 メモ作成"
+                    },
+                    "style": "primary",
+                    "action_id": "show_memo_create"
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "🔍 メモ検索"
+                    },
+                    "action_id": "show_memo_search"
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "📋 メモ一覧"
+                    },
+                    "action_id": "show_memo_list"
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "📊 メモ統計"
+                    },
+                    "action_id": "show_memo_stats"
+                }
+            ]
+        }
+    ]
+
+    return blocks
 
 def create_channel_help_blocks() -> list[Dict[str, Any]]:
     """チャンネルヘルプ用のブロックを作成"""
