@@ -20,7 +20,8 @@ from db.repository import (
     get_all_channel_memos,
     get_channel_memo_by_id,
     update_channel_memo,
-    delete_channel_memo
+    delete_channel_memo,
+    save_channel_memo
 )
 
 from .menu import (
@@ -34,7 +35,8 @@ from .memo import (
     create_memo_stats_blocks,
     create_recent_memos_blocks,
     create_memo_list_blocks,
-    create_memo_edit_modal_blocks
+    create_memo_edit_modal_blocks,
+    create_memo_create_form_blocks
 )
 
 from .tasks import (
@@ -59,6 +61,61 @@ def handle_channel_message(event, body, say, client, logger):
         except Exception as e:
             logger.error(f"Error showing channel menu: {e}")
             say(text="❌ メニューの表示中にエラーが発生しました")
+
+    # メモ作成（!memo, !m, !メモ コマンド）
+    elif re.match(r"^(!memo|!m|!メモ)\s+(.+)", text, re.IGNORECASE):
+        try:
+            # メモ内容を抽出
+            memo_match = re.match(r"^(!memo|!m|!メモ)\s+(.+)", text, re.IGNORECASE)
+            if memo_match:
+                memo_content = memo_match.group(2).strip()
+                channel_id = event.get("channel")
+                user_id = event.get("user")
+                message_ts = event.get("ts")
+
+                # ユーザー情報を取得
+                try:
+                    user_info = client.users_info(user=user_id)
+                    user_name = user_info.get("user", {}).get("real_name") or user_info.get("user", {}).get("display_name") or "Unknown User"
+                except Exception as e:
+                    logger.warning(f"Failed to get user info for {user_id}: {e}")
+                    user_name = "Unknown User"
+
+                # チャンネル情報を取得
+                try:
+                    channel_info = client.conversations_info(channel=channel_id)
+                    channel_name = channel_info.get("channel", {}).get("name", "unknown")
+                except Exception as e:
+                    logger.warning(f"Failed to get channel info for {channel_id}: {e}")
+                    channel_name = "unknown"
+
+                # メモデータを作成
+                from datetime import datetime, timezone
+                memo_data = {
+                    "channel_id": channel_id,
+                    "channel_name": channel_name,
+                    "user_id": user_id,
+                    "user_name": user_name,
+                    "message": memo_content,
+                    "message_ts": message_ts,
+                    "thread_ts": None,
+                    "permalink": None,
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                }
+
+                # メモを保存
+                saved_memo = save_channel_memo(memo_data)
+
+                print(f"DEBUG: Command memo save attempt - Data: {memo_data}")
+                print(f"DEBUG: Command memo save result: {saved_memo}")
+
+                if saved_memo:
+                    say(text=f"📝 メモを作成しました:\n> {memo_content}")
+                else:
+                    say(text="❌ メモの作成に失敗しました")
+        except Exception as e:
+            logger.error(f"Error creating memo: {e}")
+            say(text="❌ メモの作成中にエラーが発生しました")
 
     # タスク作成（!task コマンド）
     elif re.match(r"^!task\s+(.+)", text, re.IGNORECASE):
@@ -144,6 +201,21 @@ def register_channel_handlers(app: App):
             print(f"Error showing help: {e}")
             say(text="❌ ヘルプの表示中にエラーが発生しました")
 
+    # メモ作成フォーム表示
+    @app.action("show_memo_create")
+    def handle_show_memo_create(ack, body, say, client: WebClient):
+        """メモ作成フォームを表示"""
+        ack()
+        try:
+            blocks = create_memo_create_form_blocks()
+            say(
+                text="📝 メモ作成",
+                blocks=blocks
+            )
+        except Exception as e:
+            print(f"Error showing memo create form: {e}")
+            say(text="❌ メモ作成フォームの表示中にエラーが発生しました")
+
     # メモ検索フォーム表示
     @app.action("show_memo_search")
     def handle_show_memo_search(ack, body, say, client: WebClient):
@@ -167,9 +239,12 @@ def register_channel_handlers(app: App):
         try:
             # フォームから検索キーワードを取得
             search_input = None
-            for action in body.get("state", {}).get("values", {}).values():
-                if "search_input" in action:
-                    search_input = action["search_input"]["value"]
+            values = body.get("state", {}).get("values", {})
+
+            # search_input_blockからsearch_inputを探す
+            for block_id, actions in values.items():
+                if "search_input" in actions:
+                    search_input = actions["search_input"]["value"]
                     break
 
             if not search_input or not search_input.strip():
@@ -200,6 +275,75 @@ def register_channel_handlers(app: App):
         except Exception as e:
             print(f"Error executing memo search: {e}")
             say(text="❌ 検索の実行中にエラーが発生しました")
+
+    # メモ作成実行
+    @app.action("execute_memo_create")
+    def handle_execute_memo_create(ack, body, say, client: WebClient):
+        """メモ作成を実行"""
+        ack()
+        try:
+            # フォームからメモ内容を取得
+            memo_content = None
+            values = body.get("state", {}).get("values", {})
+
+            # memo_content_blockからmemo_content_inputを探す
+            for block_id, actions in values.items():
+                if "memo_content_input" in actions:
+                    memo_content = actions["memo_content_input"]["value"]
+                    break
+
+            if not memo_content or not memo_content.strip():
+                say(text="❌ メモ内容を入力してください")
+                return
+
+            channel_id = body["channel"]["id"]
+            user_id = body["user"]["id"]
+
+            # ユーザー情報を取得
+            try:
+                user_info = client.users_info(user=user_id)
+                user_name = user_info.get("user", {}).get("real_name") or user_info.get("user", {}).get("display_name") or "Unknown User"
+            except Exception as e:
+                print(f"Failed to get user info for {user_id}: {e}")
+                user_name = "Unknown User"
+
+            # チャンネル情報を取得
+            try:
+                channel_info = client.conversations_info(channel=channel_id)
+                channel_name = channel_info.get("channel", {}).get("name", "unknown")
+            except Exception as e:
+                print(f"Failed to get channel info for {channel_id}: {e}")
+                channel_name = "unknown"
+
+            # メモデータを作成
+            from datetime import datetime, timezone
+            import time
+
+            # フォームから作成する場合は現在時刻をタイムスタンプとして使用
+            current_ts = str(time.time())
+
+            memo_data = {
+                "channel_id": channel_id,
+                "channel_name": channel_name,
+                "user_id": user_id,
+                "user_name": user_name,
+                "message": memo_content.strip(),
+                "message_ts": current_ts,  # 現在時刻をタイムスタンプとして使用
+                "thread_ts": None,
+                "permalink": None
+            }
+
+            # メモを保存
+            saved_memo = save_channel_memo(memo_data)
+
+            if saved_memo:
+                say(text=f"✅ メモを作成しました:\n> {memo_content.strip()}")
+            else:
+                say(text="❌ メモの作成に失敗しました")
+
+        except Exception as e:
+            print(f"Error executing memo create: {e}")
+            say(text="❌ メモの作成中にエラーが発生しました")
 
     # メモ一覧表示
     @app.action("show_memo_list")
@@ -420,7 +564,7 @@ def register_channel_handlers(app: App):
             channel_id = body["channel"]["id"]
 
             if selected_option.startswith("toggle_task_status_"):
-                task_id = int(selected_option.replace("toggle_task_status_", ""))
+                task_id = selected_option.replace("toggle_task_status_", "")
 
                 # 現在のタスク状態を取得して切り替え
                 tasks = get_channel_tasks(channel_id)
@@ -437,7 +581,7 @@ def register_channel_handlers(app: App):
                         say(text="❌ タスクの更新に失敗しました")
 
             elif selected_option.startswith("delete_task_"):
-                task_id = int(selected_option.replace("delete_task_", ""))
+                task_id = selected_option.replace("delete_task_", "")
                 success = delete_task(task_id)
 
                 if success:
@@ -450,65 +594,74 @@ def register_channel_handlers(app: App):
             say(text="❌ タスクアクションの処理中にエラーが発生しました")
 
     # メモアクション（編集・削除）
-    @app.action(re.compile(r"memo_actions_\d+"))
+    @app.action(re.compile(r"memo_actions_.+"))
     def handle_memo_action(ack, body, say, client: WebClient):
         """メモの編集・削除アクション"""
         ack()
         try:
-            selected_option = body["actions"][0]["selected_option"]["value"]
+            action = body["actions"][0]
 
-            if selected_option.startswith("edit_memo_"):
-                memo_id = int(selected_option.replace("edit_memo_", ""))
-                memo = get_channel_memo_by_id(memo_id)
+            # URLオプション（元メッセージボタン）の場合は何もしない
+            # URLオプションは自動的にブラウザで開かれるため処理不要
+            if "url" in action.get("selected_option", {}):
+                return
 
-                if memo:
-                    # 編集モーダルを表示
-                    modal_blocks = create_memo_edit_modal_blocks(memo)
-                    client.views_open(
-                        trigger_id=body["trigger_id"],
-                        view={
-                            "type": "modal",
-                            "callback_id": f"edit_memo_modal_{memo_id}",
-                            "title": {
-                                "type": "plain_text",
-                                "text": "メモを編集"
-                            },
-                            "submit": {
-                                "type": "plain_text",
-                                "text": "更新"
-                            },
-                            "close": {
-                                "type": "plain_text",
-                                "text": "キャンセル"
-                            },
-                            "blocks": modal_blocks
-                        }
-                    )
-                else:
-                    say(text="❌ メモが見つかりませんでした")
+            # overflow menuの場合
+            if "selected_option" in action:
+                selected_option = action["selected_option"]["value"]
 
-            elif selected_option.startswith("delete_memo_"):
-                memo_id = int(selected_option.replace("delete_memo_", ""))
-                success = delete_channel_memo(memo_id)
+                if selected_option.startswith("edit_memo_"):
+                    memo_id = selected_option.replace("edit_memo_", "")
+                    memo = get_channel_memo_by_id(memo_id)
 
-                if success:
-                    say(text="🗑️ メモを削除しました")
-                else:
-                    say(text="❌ メモの削除に失敗しました")
+                    if memo:
+                        # 編集モーダルを表示
+                        modal_blocks = create_memo_edit_modal_blocks(memo)
+                        client.views_open(
+                            trigger_id=body["trigger_id"],
+                            view={
+                                "type": "modal",
+                                "callback_id": f"edit_memo_modal_{memo_id}",
+                                "title": {
+                                    "type": "plain_text",
+                                    "text": "メモを編集"
+                                },
+                                "submit": {
+                                    "type": "plain_text",
+                                    "text": "更新"
+                                },
+                                "close": {
+                                    "type": "plain_text",
+                                    "text": "キャンセル"
+                                },
+                                "blocks": modal_blocks
+                            }
+                        )
+                    else:
+                        say(text="❌ メモが見つかりませんでした")
+
+                elif selected_option.startswith("delete_memo_"):
+                    memo_id = selected_option.replace("delete_memo_", "")
+                    success = delete_channel_memo(memo_id)
+
+                    if success:
+                        say(text="🗑️ メモを削除しました")
+                    else:
+                        say(text="❌ メモの削除に失敗しました")
 
         except Exception as e:
             print(f"Error handling memo action: {e}")
             say(text="❌ メモアクションの処理中にエラーが発生しました")
 
     # メモ編集モーダルの送信
-    @app.view(re.compile(r"edit_memo_modal_\d+"))
+    @app.view(re.compile(r"edit_memo_modal_.+"))
     def handle_memo_edit_submission(ack, body, say, client: WebClient):
         """メモ編集モーダルの送信処理"""
         ack()
         try:
             # モーダルIDからメモIDを取得
             callback_id = body["view"]["callback_id"]
-            memo_id = int(callback_id.replace("edit_memo_modal_", ""))
+            memo_id = callback_id.replace("edit_memo_modal_", "")
 
             # 新しいメモ内容を取得
             new_message = body["view"]["state"]["values"]["memo_text_block"]["memo_text_input"]["value"]
@@ -533,6 +686,16 @@ def register_channel_handlers(app: App):
     @app.action("search_input")
     def handle_search_input(ack):
         """検索入力フィールドのハンドラー"""
+        ack()
+
+    @app.action("memo_content_input")
+    def handle_memo_content_input(ack):
+        """メモ内容入力フィールドのハンドラー"""
+        ack()
+
+    @app.action("memo_text_input")
+    def handle_memo_text_input(ack):
+        """メモテキスト入力フィールドのハンドラー"""
         ack()
 
     @app.action("task_name_input")

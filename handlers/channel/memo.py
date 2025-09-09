@@ -35,7 +35,7 @@ def parse_datetime_safely(datetime_str: str) -> datetime:
                 return datetime.fromisoformat(clean_str)
         except:
             pass
-        
+
         # 最終的にフォールバック（現在時刻を返す）
         return datetime.now()
 
@@ -128,7 +128,7 @@ def create_search_result_blocks(memos: List[Dict], keyword: str) -> list[Dict[st
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*{formatted_date}*\n{memo['content'][:200]}{'...' if len(memo['content']) > 200 else ''}"
+                "text": f"*{formatted_date}*\n{memo['message'][:200]}{'...' if len(memo['message']) > 200 else ''}"
             }
         })
         blocks.append({"type": "divider"})
@@ -301,13 +301,13 @@ def create_memo_list_blocks(memos: List[Dict[str, Any]], page: int = 1) -> list[
             }
         }
     ]
-    
+
     if not memos:
         blocks.append({
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "�� メモが見つかりませんでした。"
+                "text": "   メモが見つかりませんでした。"
             }
         })
     else:
@@ -319,16 +319,16 @@ def create_memo_list_blocks(memos: List[Dict[str, Any]], page: int = 1) -> list[
                 "text": f"*全{len(memos)}件のメモ*"
             }
         })
-        
+
         # 各メモを表示
         for i, memo in enumerate(memos[:10], 1):  # 最初の10件のみ表示
             created_at = parse_datetime_safely(memo["created_at"])
             jst_time = created_at.astimezone().strftime("%m/%d %H:%M")
-            
+
             memo_text = memo["message"]
             if len(memo_text) > 150:
                 memo_text = memo_text[:150] + "..."
-            
+
             block = {
                 "type": "section",
                 "text": {
@@ -356,7 +356,7 @@ def create_memo_list_blocks(memos: List[Dict[str, Any]], page: int = 1) -> list[
                     "action_id": f"memo_actions_{memo['id']}"
                 }
             }
-            
+
             # 元メッセージへのリンクがある場合は追加
             if memo.get("permalink"):
                 block["accessory"]["options"].insert(0, {
@@ -366,9 +366,9 @@ def create_memo_list_blocks(memos: List[Dict[str, Any]], page: int = 1) -> list[
                     },
                     "url": memo["permalink"]
                 })
-            
+
             blocks.append(block)
-        
+
         # 10件以上ある場合の注意書き
         if len(memos) > 10:
             blocks.append({
@@ -380,7 +380,7 @@ def create_memo_list_blocks(memos: List[Dict[str, Any]], page: int = 1) -> list[
                     }
                 ]
             })
-    
+
     # メニューに戻るボタン
     blocks.append({
         "type": "actions",
@@ -395,7 +395,7 @@ def create_memo_list_blocks(memos: List[Dict[str, Any]], page: int = 1) -> list[
             }
         ]
     })
-    
+
     return blocks
 
 
@@ -416,5 +416,65 @@ def create_memo_edit_modal_blocks(memo: Dict[str, Any]) -> list[Dict[str, Any]]:
                 "type": "plain_text",
                 "text": "メモ内容"
             }
+        }
+    ]
+
+
+def create_memo_create_form_blocks() -> list[Dict[str, Any]]:
+    """メモ作成フォーム用のブロックを作成"""
+    return [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "📝 メモ作成"
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "新しいメモを作成します。メモ内容を入力してください："
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "memo_content_block",
+            "element": {
+                "type": "plain_text_input",
+                "action_id": "memo_content_input",
+                "multiline": True,
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "例: 明日2時に待ち合わせ、会議資料の確認..."
+                },
+                "max_length": 1000
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "メモ内容"
+            }
+        },
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "📝 メモを作成"
+                    },
+                    "style": "primary",
+                    "action_id": "execute_memo_create"
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "🔙 メニューに戻る"
+                    },
+                    "action_id": "show_channel_menu"
+                }
+            ]
         }
     ]

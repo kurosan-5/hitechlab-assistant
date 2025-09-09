@@ -30,6 +30,7 @@ create table if not exists public.attendance (
   month integer not null,
   day integer not null,
   is_attend boolean not null,
+  start_time time,  -- 出勤開始時刻を記録
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint attendance_unique unique(user_id, year, month, day)

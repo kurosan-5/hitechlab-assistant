@@ -13,6 +13,7 @@ from db.repository import (
     update_task_status,
     delete_task
 )
+from .memo import parse_datetime_safely
 
 
 def create_task_create_form_blocks() -> list[Dict[str, Any]]:
@@ -196,7 +197,9 @@ def create_task_list_blocks(tasks: List[Dict], filter_status: str = "all") -> li
 
     for task in filtered_tasks:
         status_emoji = "✅" if task['status'] == 'completed' else "⏳"
-        created_at = datetime.fromisoformat(task['created_at'].replace('Z', '+00:00'))
+
+        # 安全な日時パース関数を使用
+        created_at = parse_datetime_safely(task['created_at'])
         formatted_date = created_at.strftime('%Y-%m-%d %H:%M')
 
         task_text = f"*{task['task_name']}* {status_emoji}\n"

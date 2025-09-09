@@ -8,9 +8,11 @@ from db.repository import upsert_attendance, get_users, get_attendance_between_t
 
 
 def prompt_attendance(say, values=None, error_message=None) -> None:
-    # 現在の日付を初期値として設定
-    now = datetime.now()
+    # 現在の日本時間を取得
+    jst = timezone(timedelta(hours=9))
+    now = datetime.now(jst)
     initial_date = now.strftime("%Y-%m-%d")
+    initial_time = "09:00"  # デフォルトの出勤時刻
 
     # 以前の値を保持
     if values:
@@ -18,6 +20,8 @@ def prompt_attendance(say, values=None, error_message=None) -> None:
             for action_id, payload in blocks.items():
                 if action_id == "attendance_datepicker" and payload.get("selected_date"):
                     initial_date = payload.get("selected_date")
+                elif action_id == "attendance_timepicker" and payload.get("selected_time"):
+                    initial_time = payload.get("selected_time")
 
     blocks = [
         {
@@ -42,6 +46,17 @@ def prompt_attendance(say, values=None, error_message=None) -> None:
                     "initial_date": initial_date,
                     "placeholder": {"type": "plain_text", "text": "日付を選択", "emoji": True},
                     "action_id": "attendance_datepicker",
+                },
+            ],
+        },
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "timepicker",
+                    "initial_time": initial_time,
+                    "placeholder": {"type": "plain_text", "text": "開始時刻を選択", "emoji": True},
+                    "action_id": "attendance_timepicker",
                 },
             ],
         },
@@ -89,19 +104,26 @@ def _save_attendance(is_attend: bool, body, say, client) -> None:
 
     user = get_or_create_user(user_slack_id or "unknown", display_name)
 
-    # 選択された日付を取得
+    # 選択された日付と時刻を取得
     values = body.get("state", {}).get("values", {})
     selected_date = None
+    selected_time = None
 
     for _, blocks in values.items():
         for action_id, payload in blocks.items():
             if action_id == "attendance_datepicker":
                 selected_date = payload.get("selected_date")
-                break
+            elif action_id == "attendance_timepicker":
+                selected_time = payload.get("selected_time")
 
     # 日付が選択されていない場合はエラー
     if not selected_date:
         prompt_attendance(say, values, "日付を選択してください。")
+        return
+
+    # 出勤の場合は時刻も必須
+    if is_attend and not selected_time:
+        prompt_attendance(say, values, "出勤時刻を選択してください。")
         return
 
     # 選択された日付をdatetimeに変換
@@ -112,11 +134,14 @@ def _save_attendance(is_attend: bool, body, say, client) -> None:
     except Exception:
         prompt_attendance(say, values, "正しい日付を選択してください。")
         return
-        return
 
-    upsert_attendance(user.id, selected_dt, is_attend)
+    upsert_attendance(user.id, selected_dt, is_attend, selected_time if is_attend else None)
+
     status_text = "出勤予定" if is_attend else "休み予定"
-    say(f"{selected_date} の{status_text}を保存しました。")
+    if is_attend and selected_time:
+        say(f"{selected_date} {selected_time}〜 の{status_text}を保存しました。")
+    else:
+        say(f"{selected_date} の{status_text}を保存しました。")
 
     # メニューに戻る
     from display.menu import display_menu
@@ -130,18 +155,18 @@ def show_attendance_overview(say, client=None) -> None:
         user_map: Dict[str, str] = {u.id: u.name for u in users}
         rows = get_attendance_between_tue_fri(now)
 
-        # 2か月分の火曜日と金曜日の日付を生成
+        # 1か月分の火曜日と金曜日の日付を生成（今日以降のみ）
         from collections import defaultdict
 
         by_date: Dict[str, Dict[str, str]] = defaultdict(dict)  # date -> user_id -> status
 
-        # 2か月分（約60日）の火曜日と金曜日を生成
+        # 1か月分（約30日）の火曜日と金曜日を生成
         jst_tz = timezone(timedelta(hours=9))
         cur = now.astimezone(jst_tz).replace(hour=0, minute=0, second=0, microsecond=0)
 
-        # 過去1週間と未来2か月分をカバー
-        start_date = cur - timedelta(days=7)
-        end_date = cur + timedelta(days=60)
+        # 今日から未来1か月分のみをカバー（過去は表示しない）
+        start_date = cur  # 今日から開始
+        end_date = cur + timedelta(days=30)  # 1か月先まで
 
         current = start_date
         while current <= end_date:
@@ -154,7 +179,11 @@ def show_attendance_overview(say, client=None) -> None:
         for r in rows:
             key = f"{r['_year']:04d}-{r['_month']:02d}-{r['_day']:02d}"
             if key in by_date:  # 対象日付の場合のみ
-                by_date[key][r["user_id"]] = "出勤" if r["is_attend"] else "休み"
+                status = "出勤" if r["is_attend"] else "休み"
+                # 出勤時刻がある場合は表示
+                if r["is_attend"] and r.get("start_time"):
+                    status += f"({r['start_time']}〜)"
+                by_date[key][r["user_id"]] = status
 
         # メインメッセージを投稿
         main_blocks = [
@@ -233,4 +262,9 @@ def show_attendance_overview(say, client=None) -> None:
 @bolt_app.action("attendance_datepicker")
 def handle_attendance_datepicker(ack):
     """出勤予定日付ピッカーのハンドラー（何もしない）"""
+    ack()
+
+@bolt_app.action("attendance_timepicker")
+def handle_attendance_timepicker(ack):
+    """出勤予定時刻ピッカーのハンドラー（何もしない）"""
     ack()

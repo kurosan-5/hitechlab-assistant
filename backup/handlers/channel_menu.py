@@ -463,7 +463,7 @@ def create_channel_menu_blocks() -> list[Dict[str, Any]]:
                     "type": "button",
                     "text": {
                         "type": "plain_text",
-                        "text": "� ユーザーランキング"
+                        "text": "  ユーザーランキング"
                     },
                     "action_id": "show_user_ranking"
                 },
@@ -471,7 +471,7 @@ def create_channel_menu_blocks() -> list[Dict[str, Any]]:
                     "type": "button",
                     "text": {
                         "type": "plain_text",
-                        "text": "�📖 ヘルプ"
+                        "text": " 📖 ヘルプ"
                     },
                     "action_id": "show_channel_help"
                 }

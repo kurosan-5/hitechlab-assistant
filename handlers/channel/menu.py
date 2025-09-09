@@ -49,32 +49,40 @@ def create_channel_menu_blocks() -> list[Dict[str, Any]]:
                     "type": "button",
                     "text": {
                         "type": "plain_text",
-                        "text": "🔍 メモ検索"
+                        "text": "� メモ作成"
                     },
                     "style": "primary",
+                    "action_id": "show_memo_create"
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "🔍 メモ検索"
+                    },
                     "action_id": "show_memo_search"
                 },
                 {
                     "type": "button",
                     "text": {
                         "type": "plain_text",
-                        "text": "メモ一覧"
+                        "text": "� メモ一覧"
                     },
                     "action_id": "show_memo_list"
-                },
-                {
-                    "type": "button",
-                    "text": {
-                        "type": "plain_text",
-                        "text": "📊 メモ統計"
-                    },
-                    "action_id": "show_memo_stats"
                 }
             ]
         },
         {
             "type": "actions",
             "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "� メモ統計"
+                    },
+                    "action_id": "show_memo_stats"
+                },
                 {
                     "type": "button",
                     "text": {
@@ -111,21 +119,21 @@ def create_channel_help_blocks() -> list[Dict[str, Any]]:
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "*🔍 メモ機能*\n• 会話は自動的にメモとして記録されます\n• `!memo` でメモ一覧を表示（スレッドに返信）\n• `!search キーワード` でメモを検索\n• `最近のメモ` で最新のメモを表示\n• メニューから統計情報を確認可能"
+                "text": "*� メモ機能*\n• `!memo 内容` または `!m 内容` または `!メモ 内容` でメモを作成\n• 会話は自動的にメモとして記録されます\n• `!memo` でメモ一覧を表示（スレッドに返信）\n• メニューから検索・統計情報を確認可能"
             }
         },
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "*📋 タスク管理*\n• `タスク作成 タスク名 説明` でタスクを作成\n• `タスク一覧` で全タスクを表示\n• メニューからGUIでタスク管理が可能"
+                "text": "*📋 タスク管理*\n• `!task タスク名` でタスクを作成\n• メニューからGUIでタスク管理が可能"
             }
         },
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "*📱 メニュー表示*\n• `メニュー` または `めにゅー` または `menu` でメニューを表示"
+                "text": "*📱 基本コマンド*\n• `メニュー` または `menu` でメニューを表示\n\n*💡 使用例*\n• `!memo 明日2時に待ち合わせ` - メモ作成\n• `!m 会議資料の確認` - メモ作成（短縮版）\n• `!task プレゼン準備` - タスク作成"
             }
         },
         {

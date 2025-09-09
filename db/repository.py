@@ -135,7 +135,7 @@ def get_active_work_start_time(user_id: str, end_ts_utc: datetime) -> Optional[d
     return datetime.fromisoformat(start_time_str.replace("Z", "+00:00"))
 
 
-def upsert_attendance(user_id: str, date_utc: datetime, is_attend: bool) -> dict[str, Any]:
+def upsert_attendance(user_id: str, date_utc: datetime, is_attend: bool, start_time: Optional[str] = None) -> dict[str, Any]:
     sb = get_client()
     y, m, d = ymd_from_jst(date_utc)
     payload = {
@@ -145,6 +145,10 @@ def upsert_attendance(user_id: str, date_utc: datetime, is_attend: bool) -> dict
         "day": d,
         "is_attend": is_attend,
     }
+    # 出勤の場合のみstart_timeを設定
+    if is_attend and start_time:
+        payload["start_time"] = start_time
+
     # upsert by unique constraint
     res = sb.table("attendance").upsert(payload, on_conflict="user_id,year,month,day").execute()
     items = to_record(res) or []
@@ -158,13 +162,13 @@ def get_users() -> list[User]:
     return [User(**row) for row in data]
 
 
-def get_attendance_between_tue_fri(from_utc: datetime, months_ahead: int = 2) -> list[dict[str, Any]]:
+def get_attendance_between_tue_fri(from_utc: datetime, months_ahead: int = 1) -> list[dict[str, Any]]:
     # Collect dates of Tue/Fri from today to +months_ahead (JST-based days) and query per day
     sb = get_client()
     result: list[dict[str, Any]] = []
 
-    # Roughly 2 months ahead as 62 days window
-    end_limit = from_utc + timedelta(days=62)
+    # 1 month ahead as 30 days window
+    end_limit = from_utc + timedelta(days=30)
 
     cur = from_utc
     while cur <= end_limit:
@@ -733,31 +737,40 @@ def get_all_channel_memos(channel_id: str, limit: int = 50) -> list[dict[str, An
         return []
 
 
-def get_channel_memo_by_id(memo_id: int) -> Optional[dict[str, Any]]:
+def get_channel_memo_by_id(memo_id: str) -> Optional[dict[str, Any]]:
     """
     IDによるメモの取得
 
     Args:
-        memo_id: メモID
+        memo_id: メモID（UUID文字列）
 
     Returns:
         メモデータ、見つからない場合はNone
     """
     sb = get_client()
     try:
-        res = sb.table("channel_memos").select("*").eq("id", memo_id).single().execute()
-        return to_record(res) if res.data else None
+        # UUIDの形式をチェック
+        import uuid
+        try:
+            uuid.UUID(memo_id)
+        except ValueError:
+            print(f"Error: Invalid UUID format: {memo_id}")
+            return None
+
+        res = sb.table("channel_memos").select("*").eq("id", memo_id).execute()
+        data = to_record(res) or []
+        return data[0] if data else None
     except Exception as e:
         print(f"Error getting memo by id: {e}")
         return None
 
 
-def update_channel_memo(memo_id: int, new_message: str) -> bool:
+def update_channel_memo(memo_id: str, new_message: str) -> bool:
     """
     メモの更新
 
     Args:
-        memo_id: メモID
+        memo_id: メモID（UUID文字列）
         new_message: 新しいメッセージ内容
 
     Returns:
@@ -765,6 +778,14 @@ def update_channel_memo(memo_id: int, new_message: str) -> bool:
     """
     sb = get_client()
     try:
+        # UUIDの形式をチェック
+        import uuid
+        try:
+            uuid.UUID(memo_id)
+        except ValueError:
+            print(f"Error: Invalid UUID format: {memo_id}")
+            return False
+
         res = sb.table("channel_memos").update({
             "message": new_message,
             "updated_at": "now()"
@@ -775,18 +796,26 @@ def update_channel_memo(memo_id: int, new_message: str) -> bool:
         return False
 
 
-def delete_channel_memo(memo_id: int) -> bool:
+def delete_channel_memo(memo_id: str) -> bool:
     """
     メモの削除
 
     Args:
-        memo_id: メモID
+        memo_id: メモID（UUID文字列）
 
     Returns:
         削除成功時はTrue、失敗時はFalse
     """
     sb = get_client()
     try:
+        # UUIDの形式をチェック
+        import uuid
+        try:
+            uuid.UUID(memo_id)
+        except ValueError:
+            print(f"Error: Invalid UUID format: {memo_id}")
+            return False
+
         res = sb.table("channel_memos").delete().eq("id", memo_id).execute()
         return len(to_record(res) or []) > 0
     except Exception as e:
