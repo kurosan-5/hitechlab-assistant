@@ -21,7 +21,6 @@ def handle_channel_menu(message, say, client: WebClient):
         )
 
     except SlackApiError as e:
-        print(f"Error showing channel menu: {e}")
         say(text="❌ メニューの表示中にエラーが発生しました")
 
 

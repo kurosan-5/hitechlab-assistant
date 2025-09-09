@@ -60,7 +60,6 @@ def handle_channel_message(event, body, say, client, logger):
                 blocks=blocks
             )
         except Exception as e:
-            logger.error(f"Error showing channel menu: {e}")
             say(text="❌ メニューの表示中にエラーが発生しました")
 
     # メモ作成（!memo, !m, !メモ コマンド）
@@ -78,14 +77,12 @@ def handle_channel_message(event, body, say, client, logger):
                 try:
                     user_info = client.users_info(user=user_id)
                     user_profile = user_info.get("user", {}).get("profile", {})
-                    print(user_profile)
                     user_name = (
                         user_profile.get("real_name") or
                         user_profile.get("display_name") or
                         user_info.get("user", {}).get("name", "Unknown User")
                     )
                 except Exception as e:
-                    logger.warning(f"Failed to get user info for {user_id}: {e}")
                     user_name = "Unknown User"
 
                 # チャンネル情報を取得
@@ -93,7 +90,6 @@ def handle_channel_message(event, body, say, client, logger):
                     channel_info = client.conversations_info(channel=channel_id)
                     channel_name = channel_info.get("channel", {}).get("name", "unknown")
                 except Exception as e:
-                    logger.warning(f"Failed to get channel info for {channel_id}: {e}")
                     channel_name = "unknown"
 
                 # メモデータを作成
@@ -113,15 +109,11 @@ def handle_channel_message(event, body, say, client, logger):
                 # メモを保存
                 saved_memo = save_channel_memo(memo_data)
 
-                print(f"DEBUG: Command memo save attempt - Data: {memo_data}")
-                print(f"DEBUG: Command memo save result: {saved_memo}")
-
                 if saved_memo:
                     say(text=f"📝 メモを作成しました:\n> {memo_content}")
                 else:
                     say(text="❌ メモの作成に失敗しました")
         except Exception as e:
-            logger.error(f"Error creating memo: {e}")
             say(text="❌ メモの作成中にエラーが発生しました")
 
     # タスク作成（!task コマンド）
@@ -135,11 +127,15 @@ def handle_channel_message(event, body, say, client, logger):
                 user_id = event.get("user")
 
                 # タスクデータを作成
+                from datetime import datetime, timezone, timedelta
+                # 日本時間（JST）で作成時刻を設定
+                jst_now = datetime.now(timezone(timedelta(hours=9)))
                 task_data = {
                     "channel_id": channel_id,
                     "user_id": user_id,
                     "task_name": task_name,
-                    "status": "pending"
+                    "status": "pending",
+                    "created_at": jst_now.isoformat()
                 }
 
                 # タスクを保存
@@ -150,7 +146,6 @@ def handle_channel_message(event, body, say, client, logger):
                 else:
                     say(text="❌ タスクの作成に失敗しました")
         except Exception as e:
-            logger.error(f"Error creating task: {e}")
             say(text="❌ タスクの作成中にエラーが発生しました")
 
     # メモ一覧表示（!memo コマンド）
@@ -169,7 +164,6 @@ def handle_channel_message(event, body, say, client, logger):
                 thread_ts=thread_ts
             )
         except Exception as e:
-            logger.error(f"Error showing memo list: {e}")
             say(text="❌ メモ一覧の表示中にエラーが発生しました")
 
 def register_channel_handlers(app: App):
@@ -190,7 +184,6 @@ def register_channel_handlers(app: App):
                 blocks=blocks
             )
         except Exception as e:
-            print(f"Error showing menu: {e}")
             say(text="❌ メニューの表示中にエラーが発生しました")
 
     @app.action("show_memo_management")
@@ -204,7 +197,6 @@ def register_channel_handlers(app: App):
                 blocks=blocks
             )
         except Exception as e:
-            print(f"Error showing memo management: {e}")
             say(text="❌ メモ管理の表示中にエラーが発生しました")
 
     # ヘルプ表示
@@ -219,7 +211,6 @@ def register_channel_handlers(app: App):
                 blocks=blocks
             )
         except Exception as e:
-            print(f"Error showing help: {e}")
             say(text="❌ ヘルプの表示中にエラーが発生しました")
 
     # メモ作成フォーム表示
@@ -234,7 +225,6 @@ def register_channel_handlers(app: App):
                 blocks=blocks
             )
         except Exception as e:
-            print(f"Error showing memo create form: {e}")
             say(text="❌ メモ作成フォームの表示中にエラーが発生しました")
 
     # メモ検索フォーム表示
@@ -249,7 +239,6 @@ def register_channel_handlers(app: App):
                 blocks=blocks
             )
         except Exception as e:
-            print(f"Error showing memo search: {e}")
             say(text="❌ 検索フォームの表示中にエラーが発生しました")
 
     # メモ検索実行
@@ -294,7 +283,6 @@ def register_channel_handlers(app: App):
             )
 
         except Exception as e:
-            print(f"Error executing memo search: {e}")
             say(text="❌ 検索の実行中にエラーが発生しました")
 
     # メモ作成実行
@@ -330,7 +318,6 @@ def register_channel_handlers(app: App):
                     user_info.get("user", {}).get("name", "Unknown User")
                 )
             except Exception as e:
-                print(f"Failed to get user info for {user_id}: {e}")
                 user_name = "Unknown User"
 
             # チャンネル情報を取得
@@ -338,7 +325,6 @@ def register_channel_handlers(app: App):
                 channel_info = client.conversations_info(channel=channel_id)
                 channel_name = channel_info.get("channel", {}).get("name", "unknown")
             except Exception as e:
-                print(f"Failed to get channel info for {channel_id}: {e}")
                 channel_name = "unknown"
 
             # メモデータを作成
@@ -368,7 +354,6 @@ def register_channel_handlers(app: App):
                 say(text="❌ メモの作成に失敗しました")
 
         except Exception as e:
-            print(f"Error executing memo create: {e}")
             say(text="❌ メモの作成中にエラーが発生しました")
 
     # メモ一覧表示
@@ -387,7 +372,6 @@ def register_channel_handlers(app: App):
             )
 
         except Exception as e:
-            print(f"Error showing memo list: {e}")
             say(text="❌ メモ一覧の表示中にエラーが発生しました")
 
     # メモ統計表示
@@ -411,7 +395,6 @@ def register_channel_handlers(app: App):
                 say(text="📊 統計データがありません")
 
         except Exception as e:
-            print(f"Error showing memo stats: {e}")
             say(text="❌ 統計の表示中にエラーが発生しました")
 
     # タスク管理メニュー表示
@@ -426,7 +409,6 @@ def register_channel_handlers(app: App):
                 blocks=blocks
             )
         except Exception as e:
-            print(f"Error showing task management: {e}")
             say(text="❌ タスク管理の表示中にエラーが発生しました")
 
     # タスク一覧表示（全て）
@@ -444,7 +426,6 @@ def register_channel_handlers(app: App):
                 blocks=blocks
             )
         except Exception as e:
-            print(f"Error showing task list: {e}")
             say(text="❌ タスク一覧の表示中にエラーが発生しました")
 
     # タスク一覧表示（全て）
@@ -462,7 +443,6 @@ def register_channel_handlers(app: App):
                 blocks=blocks
             )
         except Exception as e:
-            print(f"Error showing task list: {e}")
             say(text="❌ タスク一覧の表示中にエラーが発生しました")
 
     # タスク一覧表示（未完了）
@@ -480,7 +460,6 @@ def register_channel_handlers(app: App):
                 blocks=blocks
             )
         except Exception as e:
-            print(f"Error showing pending task list: {e}")
             say(text="❌ 未完了タスク一覧の表示中にエラーが発生しました")
 
     # タスク一覧表示（完了済み）
@@ -498,7 +477,6 @@ def register_channel_handlers(app: App):
                 blocks=blocks
             )
         except Exception as e:
-            print(f"Error showing completed task list: {e}")
             say(text="❌ 完了済みタスク一覧の表示中にエラーが発生しました")
 
     # タスク作成フォーム表示
@@ -513,7 +491,6 @@ def register_channel_handlers(app: App):
                 blocks=blocks
             )
         except Exception as e:
-            print(f"Error showing task create form: {e}")
             say(text="❌ タスク作成フォームの表示中にエラーが発生しました")
 
     # タスク作成実行
@@ -544,14 +521,16 @@ def register_channel_handlers(app: App):
             user_id = body["user"]["id"]
 
             # タスクデータを構築
-            from datetime import datetime, timezone
+            from datetime import datetime, timezone, timedelta
+            # 日本時間（JST）で作成時刻を設定
+            jst_now = datetime.now(timezone(timedelta(hours=9)))
             task_data = {
                 "channel_id": channel_id,
                 "task_name": task_name.strip(),
                 "description": task_description.strip(),
                 "user_id": user_id,
                 "status": "pending",
-                "created_at": datetime.now(timezone.utc).isoformat()
+                "created_at": jst_now.isoformat()
             }
 
             task_result = save_channel_task(task_data)
@@ -562,7 +541,6 @@ def register_channel_handlers(app: App):
                 say(text="❌ タスクの作成に失敗しました")
 
         except Exception as e:
-            print(f"Error creating task: {e}")
             say(text="❌ タスクの作成中にエラーが発生しました")
 
     # タスク作成キャンセル
@@ -577,7 +555,6 @@ def register_channel_handlers(app: App):
                 blocks=blocks
             )
         except Exception as e:
-            print(f"Error canceling task create: {e}")
             say(text="❌ エラーが発生しました")
 
     # タスクアクション（完了/削除）
@@ -616,7 +593,6 @@ def register_channel_handlers(app: App):
                     say(text="❌ タスクの削除に失敗しました")
 
         except Exception as e:
-            print(f"Error handling task action: {e}")
             say(text="❌ タスクアクションの処理中にエラーが発生しました")
 
     # メモアクション（編集・削除）
@@ -676,7 +652,6 @@ def register_channel_handlers(app: App):
                         say(text="❌ メモの削除に失敗しました")
 
         except Exception as e:
-            print(f"Error handling memo action: {e}")
             say(text="❌ メモアクションの処理中にエラーが発生しました")
 
     # メモ編集モーダルの送信
@@ -705,7 +680,6 @@ def register_channel_handlers(app: App):
                 say(text="❌ メモの更新に失敗しました")
 
         except Exception as e:
-            print(f"Error handling memo edit submission: {e}")
             say(text="❌ メモの更新中にエラーが発生しました")
 
     # 入力フィールドのハンドラー（必要に応じて）

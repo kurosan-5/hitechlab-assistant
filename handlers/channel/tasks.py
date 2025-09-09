@@ -198,9 +198,9 @@ def create_task_list_blocks(tasks: List[Dict], filter_status: str = "all") -> li
     for task in filtered_tasks:
         status_emoji = "✅" if task['status'] == 'completed' else "⏳"
 
-        # 安全な日時パース関数を使用
+        # 安全な日時パース関数を使用（日本時間に変換される）
         created_at = parse_datetime_safely(task['created_at'])
-        formatted_date = created_at.strftime('%Y-%m-%d %H:%M')
+        formatted_date = created_at.strftime('%m/%d %H:%M')
 
         task_text = f"*{task['task_name']}* {status_emoji}\n"
         if task.get('description'):

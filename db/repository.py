@@ -301,7 +301,6 @@ def save_channel_memo(memo_data: dict[str, Any]) -> Optional[dict[str, Any]]:
         data = to_record(res)
         return data[0] if data else None
     except Exception as e:
-        print(f"Error saving channel memo: {e}")
         return None
 
 
@@ -345,7 +344,6 @@ def search_channel_memos(
         return to_record(res) or []
 
     except Exception as e:
-        print(f"Error searching channel memos: {e}")
         return []
 
 
@@ -377,7 +375,6 @@ def get_recent_channel_memos(
         return to_record(res) or []
 
     except Exception as e:
-        print(f"Error getting recent channel memos: {e}")
         return []
 
 
@@ -514,7 +511,6 @@ def get_channel_memo_stats(channel_id: str) -> Optional[dict[str, Any]]:
         }
 
     except Exception as e:
-        print(f"Error getting channel memo stats: {e}")
         return None
 
 
@@ -545,7 +541,6 @@ def get_recent_memos(channel_id: str, days: int = 7, limit: int = 20) -> list[di
         return to_record(res) or []
 
     except Exception as e:
-        print(f"Error getting recent memos: {e}")
         return []
 
 
@@ -567,7 +562,6 @@ def save_channel_task(task_data: dict[str, Any]) -> Optional[dict[str, Any]]:
         data = to_record(res)
         return data[0] if data else None
     except Exception as e:
-        print(f"Error saving channel task: {e}")
         return None
 
 
@@ -606,7 +600,6 @@ def get_channel_tasks(
         return to_record(res) or []
 
     except Exception as e:
-        print(f"Error getting channel tasks: {e}")
         return []
 
 
@@ -640,7 +633,6 @@ def update_task_status(
         return len(to_record(res) or []) > 0
 
     except Exception as e:
-        print(f"Error updating task status: {e}")
         return False
 
 
@@ -670,7 +662,6 @@ def update_task_content(task_id: str, task_name: str, description: str = None) -
         return len(to_record(res) or []) > 0
 
     except Exception as e:
-        print(f"Error updating task content: {e}")
         return False
 
 
@@ -689,7 +680,6 @@ def delete_task(task_id: str) -> bool:
         res = sb.table("channel_tasks").delete().eq("id", task_id).execute()
         return True
     except Exception as e:
-        print(f"Error deleting task: {e}")
         return False
 
 
@@ -708,7 +698,6 @@ def get_task_by_id(task_id: str) -> Optional[dict[str, Any]]:
         res = sb.table("channel_tasks").select("*").eq("id", task_id).single().execute()
         return to_record(res) if res.data else None
     except Exception as e:
-        print(f"Error getting task by id: {e}")
         return None
 
 
@@ -733,7 +722,6 @@ def get_all_channel_memos(channel_id: str, limit: int = 50) -> list[dict[str, An
         return to_record(res) or []
 
     except Exception as e:
-        print(f"Error getting all channel memos: {e}")
         return []
 
 
@@ -754,14 +742,12 @@ def get_channel_memo_by_id(memo_id: str) -> Optional[dict[str, Any]]:
         try:
             uuid.UUID(memo_id)
         except ValueError:
-            print(f"Error: Invalid UUID format: {memo_id}")
             return None
 
         res = sb.table("channel_memos").select("*").eq("id", memo_id).execute()
         data = to_record(res) or []
         return data[0] if data else None
     except Exception as e:
-        print(f"Error getting memo by id: {e}")
         return None
 
 
@@ -783,7 +769,6 @@ def update_channel_memo(memo_id: str, new_message: str) -> bool:
         try:
             uuid.UUID(memo_id)
         except ValueError:
-            print(f"Error: Invalid UUID format: {memo_id}")
             return False
 
         res = sb.table("channel_memos").update({
@@ -792,7 +777,6 @@ def update_channel_memo(memo_id: str, new_message: str) -> bool:
         }).eq("id", memo_id).execute()
         return len(to_record(res) or []) > 0
     except Exception as e:
-        print(f"Error updating memo: {e}")
         return False
 
 
@@ -813,11 +797,9 @@ def delete_channel_memo(memo_id: str) -> bool:
         try:
             uuid.UUID(memo_id)
         except ValueError:
-            print(f"Error: Invalid UUID format: {memo_id}")
             return False
 
         res = sb.table("channel_memos").delete().eq("id", memo_id).execute()
         return len(to_record(res) or []) > 0
     except Exception as e:
-        print(f"Error deleting memo: {e}")
         return False

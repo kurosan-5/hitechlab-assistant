@@ -45,7 +45,6 @@ def handle_channel_message(event: dict, say, client) -> None:
             channel_info = client.conversations_info(channel=channel_id)
             channel_name = channel_info.get("channel", {}).get("name", "unknown")
         except Exception as e:
-            logger.warning(f"Failed to get channel info for {channel_id}: {e}")
             channel_name = "unknown"
 
         # ユーザー情報を取得
@@ -58,7 +57,6 @@ def handle_channel_message(event: dict, say, client) -> None:
                 user_info.get("user", {}).get("name", "unknown")
             )
         except Exception as e:
-            logger.warning(f"Failed to get user info for {user_id}: {e}")
             user_name = "unknown"
 
         # パーマリンクを生成
@@ -69,7 +67,6 @@ def handle_channel_message(event: dict, say, client) -> None:
             )
             permalink = permalink_response.get("permalink")
         except Exception as e:
-            logger.warning(f"Failed to get permalink: {e}")
             permalink = None
 
         # データベースに保存
@@ -85,13 +82,9 @@ def handle_channel_message(event: dict, say, client) -> None:
         }
 
         saved_memo = save_channel_memo(memo_data)
-        if saved_memo:
-            logger.info(f"Saved memo from {user_name} in #{channel_name}: {text[:50]}...")
-        else:
-            logger.error(f"Failed to save memo: {memo_data}")
 
     except Exception as e:
-        logger.error(f"Error handling channel message: {e}", exc_info=True)
+        pass
 
 
 def handle_memo_search(event: dict, say, client) -> None:
@@ -191,7 +184,6 @@ def handle_memo_search(event: dict, say, client) -> None:
         say(blocks=blocks, text=f"メモ検索結果: {keyword}")
 
     except Exception as e:
-        logger.error(f"Error handling memo search: {e}", exc_info=True)
         say("検索中にエラーが発生しました。しばらく後に再試行してください。")
 
 
@@ -273,7 +265,6 @@ def handle_memo_stats(event: dict, say, client) -> None:
         say(blocks=blocks, text=f"#{channel_name} メモ統計")
 
     except Exception as e:
-        logger.error(f"Error handling memo stats: {e}", exc_info=True)
         say("統計情報の取得中にエラーが発生しました。")
 
 
@@ -350,7 +341,6 @@ def handle_channel_memo_logic(event, body, say, client):
             say(text=f"過去{days}日間のメモ", blocks=blocks)
 
         except Exception as e:
-            logger.error(f"Error handling recent command: {e}")
             say(text="最近のメモの取得中にエラーが発生しました。")
         return
 

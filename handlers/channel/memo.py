@@ -16,11 +16,21 @@ from db.repository import (
 
 
 def parse_datetime_safely(datetime_str: str) -> datetime:
-    """安全に日時文字列をパースする"""
+    """安全に日時文字列をパースし、日本時間に変換する"""
+    from datetime import timedelta, timezone
+
     try:
         # 基本的なISO形式のパース
         clean_str = datetime_str.replace("Z", "+00:00")
-        return datetime.fromisoformat(clean_str)
+        dt = datetime.fromisoformat(clean_str)
+
+        # 日本時間（JST）に変換
+        jst = timezone(timedelta(hours=9))
+        if dt.tzinfo is None:
+            # タイムゾーン情報がない場合はUTCとして扱う
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(jst)
+
     except ValueError:
         try:
             # マイクロ秒の桁数を調整して再試行
@@ -32,12 +42,19 @@ def parse_datetime_safely(datetime_str: str) -> datetime:
                     # マイクロ秒を6桁に調整
                     microseconds = microseconds.ljust(6, '0')[:6]
                     clean_str = f"{date_part}T{time_base}.{microseconds}+{tz_part}"
-                return datetime.fromisoformat(clean_str)
+                dt = datetime.fromisoformat(clean_str)
+
+                # 日本時間（JST）に変換
+                jst = timezone(timedelta(hours=9))
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                return dt.astimezone(jst)
         except:
             pass
 
-        # 最終的にフォールバック（現在時刻を返す）
-        return datetime.now()
+        # 最終的にフォールバック（現在時刻を日本時間で返す）
+        jst = timezone(timedelta(hours=9))
+        return datetime.now(jst)
 
 
 def create_memo_search_input_blocks() -> list[Dict[str, Any]]:
