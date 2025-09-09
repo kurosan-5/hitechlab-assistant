@@ -77,7 +77,13 @@ def handle_channel_message(event, body, say, client, logger):
                 # ユーザー情報を取得
                 try:
                     user_info = client.users_info(user=user_id)
-                    user_name = user_info.get("user", {}).get("real_name") or user_info.get("user", {}).get("display_name") or "Unknown User"
+                    user_profile = user_info.get("user", {}).get("profile", {})
+                    print(user_profile)
+                    user_name = (
+                        user_profile.get("real_name") or
+                        user_profile.get("display_name") or
+                        user_info.get("user", {}).get("name", "Unknown User")
+                    )
                 except Exception as e:
                     logger.warning(f"Failed to get user info for {user_id}: {e}")
                     user_name = "Unknown User"
@@ -317,7 +323,12 @@ def register_channel_handlers(app: App):
             # ユーザー情報を取得
             try:
                 user_info = client.users_info(user=user_id)
-                user_name = user_info.get("user", {}).get("real_name") or user_info.get("user", {}).get("display_name") or "Unknown User"
+                user_profile = user_info.get("user", {}).get("profile", {})
+                user_name = (
+                    user_profile.get("real_name") or
+                    user_profile.get("display_name") or
+                    user_info.get("user", {}).get("name", "Unknown User")
+                )
             except Exception as e:
                 print(f"Failed to get user info for {user_id}: {e}")
                 user_name = "Unknown User"
