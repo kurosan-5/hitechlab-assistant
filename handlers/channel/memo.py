@@ -321,7 +321,7 @@ def create_memo_list_blocks(memos: List[Dict[str, Any]], page: int = 1) -> list[
         })
 
         # 各メモを表示
-        for i, memo in enumerate(memos[:10], 1):  # 最初の10件のみ表示
+        for i, memo in enumerate(memos[:30], 1):  # 最初の30件のみ表示
             created_at = parse_datetime_safely(memo["created_at"])
             jst_time = created_at.astimezone().strftime("%m/%d %H:%M")
 
@@ -369,14 +369,14 @@ def create_memo_list_blocks(memos: List[Dict[str, Any]], page: int = 1) -> list[
 
             blocks.append(block)
 
-        # 10件以上ある場合の注意書き
-        if len(memos) > 10:
+        # 30件以上ある場合の注意書き
+        if len(memos) > 30:
             blocks.append({
                 "type": "context",
                 "elements": [
                     {
                         "type": "mrkdwn",
-                        "text": f"💡 最新10件のみ表示しています。（全{len(memos)}件）"
+                        "text": f"💡 最新30件のみ表示しています。（全{len(memos)}件）"
                     }
                 ]
             })
@@ -446,7 +446,7 @@ def create_memo_create_form_blocks() -> list[Dict[str, Any]]:
                 "multiline": True,
                 "placeholder": {
                     "type": "plain_text",
-                    "text": "例: 明日2時に待ち合わせ、会議資料の確認..."
+                    "text": "例: 会議資料の確認..."
                 },
                 "max_length": 1000
             },
