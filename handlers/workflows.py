@@ -5,7 +5,6 @@ from datetime import datetime, timezone, timedelta
 from boltApp import bolt_app
 from db.repository import start_work as repo_start_work, end_work as repo_end_work, get_active_work_start_time
 
-
 def prompt_start_work(say) -> None:
     # kept for potential future expansion (now handled in handlers.startWork)
     from handlers.startWork import start_work as show_picker
