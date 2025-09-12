@@ -112,7 +112,7 @@ def handle_show_DM_help(ack, say):  # type: ignore[no-redef]
 			"type": "header",
 			"text": {
 				"type": "plain_text",
-				"text": "🤖 HiTech MemoBot 使い方",
+				"text": "🤖 ハイテクラボ秘書さん 使い方",
 				"emoji": True
 			}
 		},
@@ -130,7 +130,7 @@ def handle_show_DM_help(ack, say):  # type: ignore[no-redef]
 			]
 		}
 	]
-	say(blocks=help_blocks, text="HiTech MemoBot 使い方")
+	say(blocks=help_blocks, text="ハイテクラボ秘書さん使い方")
 
 @bolt_app.action("back_to_menu")
 def handle_back_to_menu(ack, body, say, client):  # type: ignore[no-redef]

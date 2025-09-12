@@ -1,7 +1,7 @@
 # プロジェクト概要
 
 ## システム名
-**勤怠管理 Slack ボット (hitech-memoBot)**
+**勤怠管理 Slack ボット (hitechlab-assistant)**
 
 ## 目的と背景
 

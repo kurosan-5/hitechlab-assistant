@@ -46,7 +46,7 @@ Slack App ↔ Bolt Framework ↔ Flask Server ↔ Supabase DB
 
 ### ディレクトリ構造
 ```
-hitech-memoBot/
+hitechlab-assistant/
 ├── app.py                 # メインアプリケーション
 ├── boltApp.py            # Slack Bolt設定
 ├── db/                   # データベース層

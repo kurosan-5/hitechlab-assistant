@@ -169,7 +169,7 @@ python app.py
 3. 以下の設定を入力:
 
 **Basic Settings:**
-- Name: `hitech-memobot`
+- Name: `hitechlab-assistant`
 - Environment: `Python 3`
 - Region: `Singapore (Asia)` 推奨
 - Branch: `master`

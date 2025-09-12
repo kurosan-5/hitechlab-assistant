@@ -38,7 +38,7 @@ def _get_env(key: str) -> str | None:
 def main() -> int:
 	# .env を読み込む（存在しない場合は無視）
 	_setup_logging()
-	logger = logging.getLogger("hitech-memoBot")
+	logger = logging.getLogger("hitechlab-assistant")
 
 
 	# Slack APIの権限をテスト
