@@ -113,7 +113,7 @@ SUPABASE_URL=https://○○.supabase.co
 ### 3.1 リポジトリクローン
 ```bash
 git clone <repository-url>
-cd hitech-memoBot
+cd hitechlab-assistant
 ```
 
 ### 3.2 Python 仮想環境作成
